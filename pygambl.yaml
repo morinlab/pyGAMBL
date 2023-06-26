@@ -1,0 +1,53 @@
+name: /projects/rmorin_scratch/for_kostia/pygambl
+channels:
+  - anaconda
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - argparse=1.4.0
+  - ca-certificates=2023.01.10
+  - certifi=2020.6.20
+  - click=8.0.3
+  - dataclasses=0.8
+  - flask=2.0.3
+  - flask-httpauth=4.8.0
+  - itsdangerous=2.0.1
+  - jinja2=3.0.3
+  - ld_impl_linux-64=2.40
+  - libblas=3.9.0
+  - libcblas=3.9.0
+  - libffi=3.4.2
+  - libgcc-ng=13.1.0
+  - libgfortran-ng=11.2.0
+  - libgfortran5=11.2.0
+  - libgomp=13.1.0
+  - liblapack=3.9.0
+  - libnsl=2.0.0
+  - libopenblas=0.3.21
+  - libsqlite=3.42.0
+  - libstdcxx-ng=13.1.0
+  - libzlib=1.2.13
+  - markupsafe=2.0.1
+  - ncurses=6.4
+  - numpy=1.19.5
+  - openssl=1.1.1s
+  - pandas=1.1.5
+  - pip=20.0.2
+  - python=3.6.15
+  - python-dateutil=2.8.2
+  - python_abi=3.6
+  - pytz=2021.3
+  - readline=8.2
+  - requests=2.12.5
+  - setuptools=49.6.0
+  - six=1.16.0
+  - sqlite=3.42.0
+  - tk=8.6.12
+  - werkzeug=2.0.3
+  - wheel=0.36.2
+  - xz=5.2.6
+prefix: /projects/rmorin_scratch/for_kostia/pygambl
