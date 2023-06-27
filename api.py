@@ -7,12 +7,16 @@ from datetime import datetime
 
 auth = HTTPBasicAuth()
 
+# a few phoney accounts for debugging authentication
+# TODO: update this to read user account details from a local file readable only by the person who will run this server
 users = {
     "GAMBLR": "letmein",
     "undergrad": "opensesame"
 }
 
-#how data will be subset per user/group
+#how data will be subset per user/group.
+# TODO: the scope of user accesss will also be determined by the user file mentioned above. 
+# Notably, scope can also be limited to include/exclude any specific cohort(s) with some minor changes to this code
 user_scope = {
     "undergrad": {"unix_group":["gambl"]},
     "GAMBLR": {"unix_group":["gambl","icgc_dart"]}
@@ -25,8 +29,6 @@ app = Flask(__name__)
 
 print("LOADING METADATA")
 metadata = pd.read_csv(METADATA_FILE,delimiter="\t")
-
-print(metadata)
 
 @auth.verify_password
 def verify_password(username, password):
@@ -50,6 +52,7 @@ def get_coding_ssm(projection="grch37",seq_type="genome"):
     some_metadata = subset_df(metadata,auth.current_user())
     some_metadata = some_metadata[some_metadata["seq_type"]==seq_type]
     CODING_SSM_FILE = f"{GAMBL_BASE}/results/all_the_things/slms_3-1.0_vcf2maf-1.3/{seq_type}--projection/deblacklisted/augmented_maf/all_slms-3--{projection}.CDS.maf"
+    # temporary code for debugging and benchmarking
     print(f"loading {CODING_SSM_FILE}")
     now = datetime.now()
     current_time = now.strftime("%H:%M:%S")
