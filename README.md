@@ -38,7 +38,7 @@ Example:
 
 To retrieve the metadata as a pandas dataframe:
 
-`./client.py get_coding_ssm`
+`./client.py get_gambl_metadata`
 
 To retrieve the full coding ssm MAF file as a pandas dataframe (default grch37/genome):
 
