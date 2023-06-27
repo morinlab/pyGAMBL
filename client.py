@@ -33,10 +33,20 @@ def get_gambl_metadata(url):
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
+def get_coding_ssm(url):
+    what = "coding_ssm" #currently the only option
+    #what = "nothing" #for testing
+    response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
+    as_pd = pd.json_normalize(response.json())
+    return(as_pd)
 
 if(function_name=="get_gambl_metadata"):
     print("TESTING get_gambl_metadata")
     meta = get_gambl_metadata(url=api_url)
     print(meta)
+elif(function_name=="get_coding_ssm"):
+    print("TESTING get_coding_ssm")
+    df = get_coding_ssm(url=api_url)
+    print(df)
 else:
     print(f"function {function_name} not supported")

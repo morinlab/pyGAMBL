@@ -3,6 +3,8 @@ from flask import Flask, jsonify, make_response
 import pandas as pd
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+
 auth = HTTPBasicAuth()
 
 users = {
@@ -41,6 +43,23 @@ def get_gambl_metadata():
     some_metadata = subset_df(metadata,auth.current_user())
     print(f"USER: {auth.current_user()}")
     return some_metadata.to_json(orient="records") #return data frame in json format that is easily converted back to a data frame
+
+@app.route('/GAMBL/api/v0.1/coding_ssm', methods=['GET'])
+@auth.login_required
+def get_coding_ssm(projection="grch37",seq_type="genome"):
+    some_metadata = subset_df(metadata,auth.current_user())
+    some_metadata = some_metadata[some_metadata["seq_type"]==seq_type]
+    CODING_SSM_FILE = f"{GAMBL_BASE}/results/all_the_things/slms_3-1.0_vcf2maf-1.3/{seq_type}--projection/deblacklisted/augmented_maf/all_slms-3--{projection}.CDS.maf"
+    print(f"loading {CODING_SSM_FILE}")
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("Start Time =", current_time)
+    coding_maf = pd.read_csv(CODING_SSM_FILE,delimiter="\t")
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    print("Completion Time =", current_time)
+    #TODO: Subset the mAF based on the sample_id in some_metadata
+    return coding_maf.to_json(orient="records")
 
 def subset_df(df,username):
     this_scope = user_scope[username]
