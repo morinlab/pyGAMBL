@@ -16,7 +16,14 @@ The `client.py` script provides a simple example demonstrating the functionality
 
 Example:
 
-``
+To retrieve the metadata as a pandas dataframe:
+
+`./client.py get_coding_ssm`
+
+To retrieve the full coding ssm MAF file as a pandas dataframe (default grch37/genome):
+
+`./client.py get_coding_ssm`
+
 
 ### Quick start (assumes you are on a gphost)
 
