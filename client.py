@@ -11,7 +11,8 @@ parser = argparse.ArgumentParser(
 
 # TODO: update help to say what functions are available
 parser.add_argument('function_name')
-
+parser.add_argument('seq_type')
+parser.add_argument('projection')
 
 username = "GAMBLR"
 password = "letmein"
@@ -27,6 +28,10 @@ api_url = "http://localhost:5678/GAMBL/api/v0.1"
 
 args = parser.parse_args()
 function_name = args.function_name
+projection = args.projection
+seq_type = args.seq_type
+
+#these arguments aren't all used yet. See hard-coded section at the end
 
 def get_gambl_metadata(url):
     what = "metadata" #currently the only option
