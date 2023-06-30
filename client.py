@@ -1,62 +1,86 @@
 #!/usr/bin/env python
 import requests
+import yaml
 import argparse
 import pandas as pd
 from requests.auth import HTTPBasicAuth
 
-# currently the demo just has one function that gets the contents of gambl_samples_available
-parser = argparse.ArgumentParser(
-                    prog='GAMpyLER',
-                    description='Demo of the Python companion to GAMBL and GAMBLR')
+# load actual users and scopes from locked config
+with open('gambl_access.yml', 'r') as file:
+    user_config = yaml.safe_load(file)
 
-# TODO: update help to say what functions are available
-parser.add_argument('function_name')
-parser.add_argument('seq_type')
-parser.add_argument('projection')
-
-username = "GAMBLR"
-password = "letmein"
-# comment out the two lines below to see what happens for GAMBLR users, who have a more complete "scope" of data access
-username = "undergrad"
-password = "opensesame"
-
-#username="reddy"
-#password="reddyornot"
-#password = "wrongpassword"
+#load any project-specific scopes from user-editable config
+with open('gambl_projects.yml', 'r') as file:
+    proj_config = yaml.safe_load(file)
 
 api_url = "http://localhost:5678/GAMBL/api/v0.1"
 
-args = parser.parse_args()
-function_name = args.function_name
-projection = args.projection
-seq_type = args.seq_type
 
 #these arguments aren't all used yet. See hard-coded section at the end
 
-def get_gambl_metadata(url):
+def get_gambl_metadata(url,username,password):
     what = "metadata" #currently the only option
     #what = "nothing" #for testing
     response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-def get_coding_ssm(url,projection,seq_type):
-    what = "coding_ssm" #currently the only option
-    #what = "nothing" #for testing
-    #test_url = f"{api_url}/{what}?projection={projection}&seq_type={seq_type}"
-    #print(test_url)
-    #response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
-    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}",auth=HTTPBasicAuth(username,password))
+def get_coding_ssm(url,username,password,project,projection,seq_type):
+    what = "coding_ssm" # this tells the API what GAMBLR function to call
+    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}&project={project}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
+def get_combined_sv(url,username,password,project,projection,seq_type):
+    what = "combined_sv" # this tells the API what GAMBLR function to call
+    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}&project={project}",auth=HTTPBasicAuth(username,password))
+    as_pd = pd.json_normalize(response.json())
+    return(as_pd)
 
-print("TESTING get_coding_ssm")
-print("hg38, capture")
-df = get_coding_ssm(api_url,"hg38","capture")
-print(df)
+to_test = "combined_sv"
+#to_test = "coding_ssm"
 
-print("grch37, genome")
-df = get_coding_ssm(api_url,"grch37","genome")
-print(df)
-
+for username in user_config['user'].keys():
+    print("==================")
+    print(f"USER: {username}")
+    print(">>>>>>>>>>>>>>>>>>")
+    print(username,user_config['user'][username]['password'])
+    for project in proj_config['project'].keys():
+        if project == "default":
+            continue
+        print(f"PROJECT: {project}")
+        if "projection" in proj_config['project'][project]:
+            projection = proj_config['project'][project]["projection"]
+        else:
+            projection = proj_config['project']['default']["projection"]
+        if "seq_type" in proj_config['project'][project]:
+            print("seq_type key exists")
+            seq_type = proj_config['project'][project]["seq_type"]
+        else:
+            print('seq_type key not exists')
+            print(proj_config['project'][project])
+            seq_type = proj_config['project']['default']["seq_type"]
+        if to_test == "coding_ssm":
+            print(f"TESTING get_coding_ssm with {project}. projection: {projection}, seq_type: {seq_type}")
+        
+            # TODO: need to eventually elegantly handle functions that allow only a single seq_type at a time!
+            if isinstance(seq_type, list):
+                for a_seq_type in seq_type:
+                    print(f"{projection}, {a_seq_type}")
+                    df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],project,projection,a_seq_type)
+                    print(df)
+            else:
+                print(f"{projection}, {seq_type}")
+                df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],project,projection,seq_type)
+                print(df)
+        elif to_test == "combined_sv":
+            if not "genome" in seq_type:
+                continue
+                #skip any projects where sv data will not exist
+            seq_type = "genome"
+            print(f"TESTING get_combined_sv with {project}. projection: {projection}, seq_type: {seq_type}")
+            print(f"{projection}, {seq_type}")
+            df = get_combined_sv(api_url,username,user_config['user'][username]['password'],project,projection,seq_type)
+            print(df)
+        else:
+            print("Don't know what to do")

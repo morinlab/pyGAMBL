@@ -1,0 +1,29 @@
+
+project:
+  default:
+    seq_type:
+      - genome
+    projection: grch37
+  reddy_project:
+    scope:
+      cohort:
+        - dlbcl_reddy
+    seq_type:
+      - capture
+    projection: grch37
+  everything_hg38:
+    projection: hg38
+    seq_type:
+      - genome
+      - capture
+  everything_grch37:
+    projection: grch37
+    seq_type:
+      - genome
+      - capture
+  genomes_hg38:
+    seq_type: genome
+    projection: hg38
+  genomes_grch37:
+    seq_type: genome
+    projection: grch37

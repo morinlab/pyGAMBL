@@ -1,0 +1,15 @@
+
+user:
+  gamblr:
+    password: igambl
+    scope: 
+      unix_group:
+        - icgc_dart
+        - gambl
+  no_icgc:
+    password: nofun
+    scope:
+      unix_group:
+        - gambl
+
+

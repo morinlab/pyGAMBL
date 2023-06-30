@@ -14,7 +14,6 @@ location = "remote"
 with open('config.yml', 'r') as file:
     config_all = yaml.safe_load(file)
 
-
 if location == "remote":
     REPO_BASE = config_all['remote']['repo_base']
     GAMBL_BASE = config_all['remote']['project_base']
@@ -27,25 +26,31 @@ METADATA_FILE = f"{REPO_BASE}/data/metadata/gambl_samples_available.tsv"
 
 auth = HTTPBasicAuth()
 
-# a few phoney accounts for debugging authentication
-# TODO: update this to read user account details from a local file readable only by the person who will run this server
-users = {
-    "GAMBLR": "letmein",
-    "undergrad": "opensesame",
-    "reddy": "reddyornot"
-}
+# load actual users and scopes from locked config
+with open('gambl_access.yml', 'r') as file:
+    user_config = yaml.safe_load(file)
 
-#how data will be subset per user/group.
-# TODO: the scope of user accesss will also be determined by the user file mentioned above. 
-# Notably, scope can also be limited to include/exclude any specific cohort(s) with some minor changes to this code
-user_scope = {
-    "undergrad": {"unix_group":["gambl"]},
-    "GAMBLR": {"unix_group":["gambl","icgc_dart"]},
-    "reddy": {"cohort":["dlbcl_reddy"]}
-}
+users = {}
+user_scope = {}
+project_scope = {}
+for user in user_config['user'].keys():
+    users[user] = user_config['user'][user]['password']
+    user_scope[user] = user_config['user'][user]['scope']
 
+with open('gambl_projects.yml', 'r') as file:
+    proj_config = yaml.safe_load(file)
 
+for proj in proj_config['project'].keys():
+    if 'scope' in proj_config['project'][proj]:
+        project_scope[proj] = proj_config['project'][proj]['scope']
 
+print("USERS:")
+print(users)
+print("SCOPES:")
+print(user_scope)
+print("PROJECTS:")
+print(project_scope)
+print("-------")
 app = Flask(__name__)
 
 print("LOADING METADATA")
@@ -72,12 +77,22 @@ def get_gambl_metadata():
 
 @app.route('/GAMBL/api/v0.1/coding_ssm', methods=['GET'])
 @auth.login_required
-def get_coding_ssm(projection="grch37",seq_type="capture"):
+def get_coding_ssm():
+    if 'project' in request.args:
+        project = request.args['project']
+    else:
+        project = "default"
     if 'projection' in request.args:
         print(f"PROJECTION:{request.args['projection']}")
         projection = request.args['projection']
+    else:
+        projection = proj_config['project'][project]['projection']
+    
     if 'seq_type' in request.args:
         seq_type = request.args['seq_type']
+    else:
+        seq_type = proj_config['project'][project]['seq_type']
+    
     some_metadata = subset_df(metadata,auth.current_user())
     print(some_metadata)
     coding_ssm_df = pd.read_csv(os.popen(f"{gamblr_script} --function_name get_coding_ssm --args projection={projection} seq_type={seq_type}"),delimiter="\t")
@@ -86,30 +101,51 @@ def get_coding_ssm(projection="grch37",seq_type="capture"):
     print(coding_ssm_df)
     return coding_ssm_df.to_json(orient="records")
 
-@app.route('/GAMBL/api/v0.1/coding_ssm_python', methods=['GET'])
+@app.route('/GAMBL/api/v0.1/combined_sv', methods=['GET'])
 @auth.login_required
-def get_coding_ssm_python(projection="grch37",seq_type="genome"):
+def get_combined_sv():
+    if 'project' in request.args:
+        project = request.args['project']
+    else:
+        project = "default"
+    if 'projection' in request.args:
+        print(f"PROJECTION:{request.args['projection']}")
+        projection = request.args['projection']
+    else:
+        projection = proj_config['project'][project]['projection']
+    
+    if 'seq_type' in request.args:
+        seq_type = request.args['seq_type']
+    else:
+        seq_type = proj_config['project'][project]['seq_type']
+    
     some_metadata = subset_df(metadata,auth.current_user())
-    some_metadata = some_metadata[some_metadata["seq_type"]==seq_type]
-    CODING_SSM_FILE = f"{GAMBL_BASE}/all_the_things/slms_3-1.0_vcf2maf-1.3/{seq_type}--projection/deblacklisted/augmented_maf/all_slms-3--{projection}.CDS.maf"
-    # temporary code for debugging and benchmarking
-    print(f"loading {CODING_SSM_FILE}")
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("Start Time =", current_time)
-    coding_maf = pd.read_csv(CODING_SSM_FILE,delimiter="\t")
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    print("Completion Time =", current_time)
-    #TODO: Subset the mAF based on the sample_id in some_metadata
-    return coding_maf.to_json(orient="records")
+    print(some_metadata)
+    this_df = pd.read_csv(os.popen(f"{gamblr_script} --function_name get_combined_sv --args projection={projection}"),delimiter="\t")
+    this_df = this_df[this_df["tumour_sample_id"].isin(some_metadata["sample_id"])]
+    #drop rows this user is not allowed to see
+    print(this_df)
+    return this_df.to_json(orient="records")
 
-def subset_df(df,username):
+
+def subset_df(df,username,project=""):
     this_scope = user_scope[username]
+    print(this_scope)
     new_df = df
     for column in this_scope.keys():
         print(f"SCOPE {column} {this_scope[column]}")
+        print(type(this_scope[column]))
         new_df = new_df[new_df[column].isin(this_scope[column])]
+    if project == "":
+        return(new_df)
+    this_scope = project_scope[project]
+    print(new_df)
+    print(this_scope)
+    for column in this_scope.keys():
+        print(f"SCOPE {column} {this_scope[column]}")
+        print(type(this_scope[column]))
+        new_df = new_df[new_df[column].isin(this_scope[column])]
+    print(new_df)
     return(new_df)
 
 
