@@ -16,9 +16,11 @@ parser.add_argument('function_name')
 username = "GAMBLR"
 password = "letmein"
 # comment out the two lines below to see what happens for GAMBLR users, who have a more complete "scope" of data access
-#username = "undergrad"
-#password = "opensesame"
+username = "undergrad"
+password = "opensesame"
 
+#username="reddy"
+#password="reddyornot"
 #password = "wrongpassword"
 
 api_url = "http://localhost:5678/GAMBL/api/v0.1"
@@ -33,20 +35,23 @@ def get_gambl_metadata(url):
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-def get_coding_ssm(url):
+def get_coding_ssm(url,projection,seq_type):
     what = "coding_ssm" #currently the only option
     #what = "nothing" #for testing
-    response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
+    #test_url = f"{api_url}/{what}?projection={projection}&seq_type={seq_type}"
+    #print(test_url)
+    #response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
+    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-if(function_name=="get_gambl_metadata"):
-    print("TESTING get_gambl_metadata")
-    meta = get_gambl_metadata(url=api_url)
-    print(meta)
-elif(function_name=="get_coding_ssm"):
-    print("TESTING get_coding_ssm")
-    df = get_coding_ssm(url=api_url)
-    print(df)
-else:
-    print(f"function {function_name} not supported")
+
+print("TESTING get_coding_ssm")
+print("hg38, capture")
+df = get_coding_ssm(api_url,"hg38","capture")
+print(df)
+
+print("grch37, genome")
+df = get_coding_ssm(api_url,"grch37","genome")
+print(df)
+

@@ -1,0 +1,5 @@
+numpy
+openssl
+flask
+pandas
+werkzeug
