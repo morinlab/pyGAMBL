@@ -19,26 +19,32 @@ api_url = "http://localhost:5678/GAMBL/api/v0.1"
 #these arguments aren't all used yet. See hard-coded section at the end
 
 def get_gambl_metadata(url,username,password):
-    what = "metadata" #currently the only option
-    #what = "nothing" #for testing
+    what = "get_gambl_metadata" #currently the only option
     response = requests.get(f"{api_url}/{what}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-def get_coding_ssm(url,username,password,project,projection,seq_type):
-    what = "coding_ssm" # this tells the API what GAMBLR function to call
-    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}&project={project}",auth=HTTPBasicAuth(username,password))
+def get_coding_ssm(url,username,password,projection,seq_type):
+    what = "get_coding_ssm" # this tells the API what GAMBLR function to call
+    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-def get_combined_sv(url,username,password,project,projection,seq_type):
-    what = "combined_sv" # this tells the API what GAMBLR function to call
-    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}&project={project}",auth=HTTPBasicAuth(username,password))
+def get_combined_sv(url,username,password,projection,seq_type):
+    what = "get_combined_sv" # this tells the API what GAMBLR function to call
+    response = requests.get(f"{api_url}/{what}?projection={projection}&seq_type={seq_type}",auth=HTTPBasicAuth(username,password))
     as_pd = pd.json_normalize(response.json())
     return(as_pd)
 
-to_test = "combined_sv"
-#to_test = "coding_ssm"
+def get_manta_sv(url,username,password,projection):
+    what = "get_manta_sv" # this tells the API what GAMBLR function to call
+    response = requests.get(f"{api_url}/{what}?projection={projection}",auth=HTTPBasicAuth(username,password))
+    as_pd = pd.json_normalize(response.json())
+    return(as_pd)
+
+to_test = "manta_sv"
+#to_test = "combined_sv"
+to_test = "coding_ssm"
 
 for username in user_config['user'].keys():
     print("==================")
@@ -67,11 +73,11 @@ for username in user_config['user'].keys():
             if isinstance(seq_type, list):
                 for a_seq_type in seq_type:
                     print(f"{projection}, {a_seq_type}")
-                    df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],project,projection,a_seq_type)
+                    df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],projection,a_seq_type)
                     print(df)
             else:
                 print(f"{projection}, {seq_type}")
-                df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],project,projection,seq_type)
+                df = get_coding_ssm(api_url,username,user_config['user'][username]['password'],projection,seq_type)
                 print(df)
         elif to_test == "combined_sv":
             if not "genome" in seq_type:
@@ -81,6 +87,14 @@ for username in user_config['user'].keys():
             print(f"TESTING get_combined_sv with {project}. projection: {projection}, seq_type: {seq_type}")
             print(f"{projection}, {seq_type}")
             df = get_combined_sv(api_url,username,user_config['user'][username]['password'],project,projection,seq_type)
+            print(df)
+        elif to_test == "manta_sv":
+            if not "genome" in seq_type:
+                continue
+                #skip any projects where sv data will not exist
+            seq_type = "genome"
+            print(f"TESTING get_manta_sv with {project}. projection: {projection}")
+            df = get_manta_sv(api_url,username,user_config['user'][username]['password'],projection)
             print(df)
         else:
             print("Don't know what to do")

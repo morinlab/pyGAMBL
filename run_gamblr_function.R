@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+## the line below is only needed for a Mac installation
 #!/usr/local/bin/Rscript
 library(argparse)
 library(readr)
@@ -22,6 +24,14 @@ get_args = function(all_args){
     return(arg_split)
 }
 arglist = get_args(ARGS)
+
+available_args = names(formals(FUNCTION))
+
+#check if our function handles the parameters given
+if(any(! names(arglist) %in% available_args)){
+    bad_arg = names(arglist)[which(!names(arglist) %in% available_args)]
+    stop(paste("ERROR:",bad_arg,"not in available arguments for",FUNCTION))
+}
 
 message(paste("FUNCTION:",FUNCTION))
 message(paste("ARGS:",arglist))

@@ -8,7 +8,8 @@ from datetime import datetime
 import yaml
 
 verbose = True
-location = "remote"
+#location = "remote"
+location = "GSC"
 
 # load and set paths from config
 with open('config.yml', 'r') as file:
@@ -68,40 +69,28 @@ def verify_password(username, password):
 def unauthorized():
     return make_response(jsonify({'error': 'Unauthorized access'}), 401)
 
-@app.route('/GAMBL/api/v0.1/metadata', methods=['GET'])
+@app.route('/GAMBL/api/v0.1/get_gambl_metadata', methods=['GET'])
 @auth.login_required
 def get_gambl_metadata():
     some_metadata = subset_df(metadata,auth.current_user())
     print(f"USER: {auth.current_user()}")
     return some_metadata.to_json(orient="records") #return data frame in json format that is easily converted back to a data frame
 
-@app.route('/GAMBL/api/v0.1/coding_ssm', methods=['GET'])
+@app.route('/GAMBL/api/v0.1/get_coding_ssm', methods=['GET'])
 @auth.login_required
 def get_coding_ssm():
-    if 'project' in request.args:
-        project = request.args['project']
-    else:
-        project = "default"
-    if 'projection' in request.args:
-        print(f"PROJECTION:{request.args['projection']}")
-        projection = request.args['projection']
-    else:
-        projection = proj_config['project'][project]['projection']
-    
-    if 'seq_type' in request.args:
-        seq_type = request.args['seq_type']
-    else:
-        seq_type = proj_config['project'][project]['seq_type']
-    
     some_metadata = subset_df(metadata,auth.current_user())
-    print(some_metadata)
-    coding_ssm_df = pd.read_csv(os.popen(f"{gamblr_script} --function_name get_coding_ssm --args projection={projection} seq_type={seq_type}"),delimiter="\t")
+    cmd = f"{gamblr_script} --function_name get_coding_ssm --args"
+    for arg in request.args:
+        cmd = cmd + f" {arg}={request.args[arg]}"
+    coding_ssm_df = pd.read_csv(os.popen(cmd),delimiter="\t")
+    #Important! All of these functions must drop rows this user is not allowed to see per the scope in the gambl_acces.yml file (stored in user_scope)
     coding_ssm_df = coding_ssm_df[coding_ssm_df["Tumor_Sample_Barcode"].isin(some_metadata["sample_id"])]
-    #drop rows this user is not allowed to see
+    
     print(coding_ssm_df)
     return coding_ssm_df.to_json(orient="records")
 
-@app.route('/GAMBL/api/v0.1/combined_sv', methods=['GET'])
+@app.route('/GAMBL/api/v0.1/get_combined_sv', methods=['GET'])
 @auth.login_required
 def get_combined_sv():
     if 'project' in request.args:
@@ -122,6 +111,21 @@ def get_combined_sv():
     some_metadata = subset_df(metadata,auth.current_user())
     print(some_metadata)
     this_df = pd.read_csv(os.popen(f"{gamblr_script} --function_name get_combined_sv --args projection={projection}"),delimiter="\t")
+    this_df = this_df[this_df["tumour_sample_id"].isin(some_metadata["sample_id"])]
+    #drop rows this user is not allowed to see
+    print(this_df)
+    return this_df.to_json(orient="records")
+
+@app.route('/GAMBL/api/v0.1/get_manta_sv', methods=['GET'])
+@auth.login_required
+def get_manta_sv():
+    some_metadata = subset_df(metadata,auth.current_user())
+    print(some_metadata)
+    cmd = f"{gamblr_script} --function_name get_manta_sv --args"
+    for arg in request.args:
+        cmd = cmd + f" {arg}={request.args[arg]}"
+    print(cmd)
+    this_df = pd.read_csv(os.popen(cmd),delimiter="\t")
     this_df = this_df[this_df["tumour_sample_id"].isin(some_metadata["sample_id"])]
     #drop rows this user is not allowed to see
     print(this_df)
