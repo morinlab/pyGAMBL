@@ -44,5 +44,9 @@ To retrieve the full coding ssm MAF file as a pandas dataframe (default grch37/g
 
 `./client.py get_coding_ssm`
 
+### The GAMBLR R script
+
+You only really need to worry about how this script works if you are a developer or are running the `api.py` script. When api.py receives a recognized request, it calls the `run_gamblr_function.R` script to run the requested GAMBLR function with the parameters provided and it captures the output (from STDOUT) into a data frame which is returned to the client (as json). The client then converts this back to a data frame. 
+
 
 
