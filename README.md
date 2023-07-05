@@ -44,5 +44,9 @@ To retrieve the full coding ssm MAF file as a pandas dataframe (default grch37/g
 
 `./client.py get_coding_ssm`
 
+### Under the hood: the GAMBLR R script
+
+When it receives a recognized request, the API script calls the `run_gamblr_function.R` script to run the requested GAMBLR function with the parameters provided. 
+
 
 
